@@ -10,9 +10,10 @@ Because I want to read them comfortable on my ebook when traveling. Not more... 
 
 ## Helpful libraries and tools
 
-- https://pandoc.org/ - Haskell and then maybe make use of https://pypi.org/project/pypandoc/.
+- https://pandoc.org/ - Haskell and then maybe make use of https://pypi.org/project/pandocfilters/, 
+  https://pypi.org/project/pypandoc/ or https://pypi.org/project/pandoc/.
   (very mature features for document conversion like direct manpage input and epub output, 
-  but I don't know much about pandoc, so I need to discover this. (https://pypi.org/project/pandoc/))
+  but I don't know much about pandoc, so I need to discover this.)
 - https://www.gnu.org/software/groff/
   (man -Thtml df > df.html)
 - https://linux.die.net/man/1/man2html
