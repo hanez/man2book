@@ -6,11 +6,12 @@ Maybe this could be only a small shell script but if not I will use Python.
 
 ## Why man pages as ebook?
 
-Because I want to read them comfortable on my ebook when traveling. Not more... ;)
+Because I want to read them comfortable on my ebook reader when traveling but all man pages in one book.
+Not more... ;)
 
 ## Helpful libraries and tools
 
-- https://pandoc.org/ - Haskell and then maybe make use of https://pypi.org/project/pandocfilters/, 
+- https://pandoc.org/ - Haskell - Then maybe make use of https://pypi.org/project/pandocfilters/, 
   https://pypi.org/project/pypandoc/ or https://pypi.org/project/pandoc/.
   (very mature features for document conversion like direct manpage input and epub output, 
   but I don't know much about pandoc, so I need to discover this.)
