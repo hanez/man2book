@@ -1,6 +1,6 @@
-# man2ebook
+# man2book
 
-A tool to convert all installed man pages to a simple ebook with contents in the head.
+A tool to convert all installed man pages to a simple ebook or other formats with contents in the head.
 
 Maybe this could be only a small shell script but if not I will use Python.
 
@@ -24,3 +24,15 @@ Not more... ;)
 - https://docutils.sourceforge.io/ - Python
   (as I can see now it only converts from .rst files.)
 - https://github.com/hanez/aov-html2epub - Bash
+
+## Workflow
+
+1. Read manpage sections
+2. Create HTML file for each manpage in each section
+3. Read and store title(metadata) for in each file
+4. Remove all unneeded stuff like html, head and body in each file
+5. Create TOC for the entire ebook
+6. Create a header HTML file for the ebook containing the head tag
+7. Merge toc and content of all files for preparing the ebook
+8. Merge the header file with the prepared ebook while inserting html and body tags which should result in a valid HTML file
+9. Create ebook from the resulting HTML file using Pandoc

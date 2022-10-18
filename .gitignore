@@ -1,2 +1,5 @@
 .idea/
-man2ebook.iml
+man2book.iml
+/output/*.html
+/tmp/
+/venv/

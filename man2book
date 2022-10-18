@@ -1,0 +1,74 @@
+#!/usr/bin/python3
+import argparse
+import os
+
+# the limit is just for development to limit the number of man pages in each section. set to 0 to
+# have no limit.
+LIMIT = 0
+MANPAGE_PATH = '/usr/share/man/'
+OUTPUT_DIR = '~/code/man2book/output/'
+TMP_DIR = '/tmp'
+
+
+__author__ = 'Johannes Findeisen <you@hanez.org'
+__version__ = '0.0.1'
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='man2book is a tool to create a custom ebook of installed man pages or a '
+                    'selection of manpage sections and pages.',
+        epilog='author: ' + __author__,
+        prog='man2book')
+
+    # if using this feature there must be a way to set the section for each manpage since the name
+    # can be used in more than one section. maybe make it optional like df:1 or so. so this feature
+    # is not reliable at the moment.
+    parser.add_argument('-m', '--manpages', metavar='MANPAGES', help='limit only to a subset of '
+                                                                     'man pages. e.g. cd or a list '
+                                                                     'like cd,df,mv. this feature '
+                                                                     'is not reliable at the '
+                                                                     'moment because it should be '
+                                                                     'possible to set the section '
+                                                                     'here optionally for each '
+                                                                     'manpage! e.g. df:1')
+
+    parser.add_argument('-s', '--sections', metavar='SECTIONS', help='the manpage sections. e.g. 8 '
+                                                                     'or a list like 1,2,3')
+
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(__version__))
+
+    return parser.parse_args()
+
+
+args = parse_args()
+sections = ['1', '2', '3', '4', '5', '6', '7', '8']
+
+if args.sections:
+    args_sections = args.sections.split(',')
+    new_sections = []
+    for section in args_sections:
+        if section not in sections:
+            print('section ' + section + ' not found! aborting...')
+            exit(1)
+        new_sections.append(section)
+    sections = new_sections
+
+for section in sections:
+    x = 1
+    for manpage_file in os.listdir(MANPAGE_PATH + 'man' + section + '/'):
+        manpage = os.path.splitext(os.path.basename(manpage_file))[0]
+        manpage = os.path.splitext(manpage)[0]
+        if args.manpages:
+            manpages = args.manpages.split(',')
+            if manpage in manpages:
+                # this needs to be taken over by pandoc to create not only single pages but a whole
+                # ebook. this will require a lot of output manipulation before. removing html, head,
+                # body tags etc. before i need to get the title to create chapters from them and
+                # create and  to create a toc. maybe the anchor in the toc can be a hash
+                os.system('/usr/bin/man -Thtml ' + manpage + ' > ' + OUTPUT_DIR + 'man' + section +
+                          '.' + manpage + '.html')
+        if LIMIT > 0:
+            if x == LIMIT:
+                break
+            x += 1
