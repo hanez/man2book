@@ -10,13 +10,13 @@ OUTPUT_DIR = '~/code/man2book/output/'
 TMP_DIR = '/tmp'
 
 
-__author__ = 'Johannes Findeisen <you@hanez.org'
+__author__ = 'Johannes Findeisen <you@hanez.org>'
 __version__ = '0.0.1'
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='man2book is a tool to create a custom ebook of installed man pages or a '
+        description='man2book is a tool to create a custom book of installed man pages or a '
                     'selection of manpage sections and pages.',
         epilog='author: ' + __author__,
         prog='man2book')
