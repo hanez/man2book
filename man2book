@@ -1,48 +1,52 @@
 #!/usr/bin/python3
 import argparse
 import os
+import re
 
+from bs4 import BeautifulSoup
+
+__author__ = 'Johannes Findeisen <you@hanez.org>'
+__version__ = '0.0.3'
+
+DIR = '/home/hanez/code/man2book/'
 # the limit is just for development to limit the number of man pages in each section. set to 0 to
 # have no limit.
 LIMIT = 0
 MANPAGE_PATH = '/usr/share/man/'
-OUTPUT_DIR = './output/'
-TMP_DIR = '/tmp'
+OUTPUT_DIR = DIR + 'output/'
+TMP_DIR = '/tmp/man2book/'
 
-
-__author__ = 'Johannes Findeisen <you@hanez.org>'
-__version__ = '0.0.2'
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description='man2book is a tool to create a custom book of installed man pages or a '
-                    'selection of manpage sections and pages.',
-        epilog='author: ' + __author__,
-        prog='man2book')
-
-    # if using this feature there must be a way to set the section for each manpage since the name
-    # can be used in more than one section. maybe make it optional like df:1 or so. so this feature
-    # is not reliable at the moment.
-    parser.add_argument('-m', '--manpages', metavar='MANPAGES', help='limit only to a subset of '
-                                                                     'man pages. e.g. cd or a list '
-                                                                     'like cd,df,mv. this feature '
-                                                                     'is not reliable at the '
-                                                                     'moment because it should be '
-                                                                     'possible to set the section '
-                                                                     'here optionally for each '
-                                                                     'manpage! e.g. df:1')
-
-    parser.add_argument('-s', '--sections', metavar='SECTIONS', help='the manpage sections. e.g. 8 '
-                                                                     'or a list like 1,2,3')
-
-    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(__version__))
-
-    return parser.parse_args()
-
-
-args = parse_args()
 sections = ['1', '2', '3', '4', '5', '6', '7', '8']
+# the toc will be a nested dictionary: https://www.geeksforgeeks.org/python-nested-dictionary/
+# toc = {'section1': {'title': 'title', 'anchor': 'anchor'},
+#        'section1': {'title': 'title', 'anchor': 'anchor'},
+#        'section2': {'title': 'title', 'anchor': 'anchor'}}
+toc = {}
+
+parser = argparse.ArgumentParser(
+    description='man2book is a tool to create a custom book of installed man pages or a '
+                'selection of manpage sections and pages.',
+    epilog='author: ' + __author__,
+    prog='man2book')
+
+# if using this feature there must be a way to set the section for each manpage since the name
+# can be used in more than one section. maybe make it optional like df:1 or so. so this feature
+# is not reliable at the moment.
+parser.add_argument('-m', '--manpages', metavar='MANPAGES', help='limit only to a subset of '
+                                                                 'man pages. e.g. cd or a list '
+                                                                 'like cd,df,mv. this feature '
+                                                                 'is not reliable at the '
+                                                                 'moment because it should be '
+                                                                 'possible to set the section '
+                                                                 'here optionally for each '
+                                                                 'manpage! e.g. df.1')
+
+parser.add_argument('-s', '--sections', metavar='SECTIONS', help='the manpage sections. e.g. 8 '
+                                                                 'or a list like 1,2,3')
+
+parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(__version__))
+
+args = parser.parse_args()
 
 if args.sections:
     args_sections = args.sections.split(',')
@@ -54,24 +58,72 @@ if args.sections:
         new_sections.append(section)
     sections = new_sections
 
+i = 1
 for section in sections:
-    x = 1
+    stop = False
     for manpage_file in os.listdir(MANPAGE_PATH + 'man' + section + '/'):
         manpage = os.path.splitext(os.path.basename(manpage_file))[0]
-        manpage = os.path.splitext(manpage)[0]
-        if args.manpages:
-            manpages = args.manpages.split(',')
-            if manpage in manpages:
-                # this needs to be taken over by pandoc to create not only single pages but a whole
-                # ebook. this will require a lot of output manipulation before. removing html, head,
-                # body tags etc. before i need to get the title to create chapters from them and
-                # create and  to create a toc. maybe the anchor in the toc can be a hash
-                os.system('/usr/bin/man -Thtml ' + manpage + ' > ' + OUTPUT_DIR + 'man' + section +
-                          '.' + manpage + '.html')
-        else:
-            os.system('/usr/bin/man -Thtml ' + manpage + ' > ' + OUTPUT_DIR + 'man' + section +
-                      '.' + manpage + '.html')
+        try:
+            if args.manpages:
+                if stop is True:
+                    args_manpages.remove(args_manpage)
+                    if not args_manpages:
+                        raise StopIteration
+                else:
+                    args_manpages = args.manpages.split(',')
+                    stop = False
+
+                i = 1
+                for args_manpage in args_manpages:
+                    if os.path.splitext(args_manpage)[0] not in args_manpages:
+                        break
+                    else:
+                        manpage = args_manpage + '.' + section
+                        manpage_file = manpage + '.gz'
+                        stop = True
+                        break
+
+            os.system('cp /usr/share/man/man' + section + '/' + manpage_file + ' ' + TMP_DIR)
+            try:
+                os.system('cd ' + TMP_DIR + ' && gunzip -f ' + TMP_DIR + manpage_file)
+            except Exception as err:
+                os.system('rm -rf ' + TMP_DIR + manpage_file)
+                pass
+            os.system('pandoc --from man --to html < ' + TMP_DIR + manpage +
+                      ' > ' + TMP_DIR + manpage + '.html')
+
+            os.system('rm -rf ' + TMP_DIR + manpage)
+
+            file = open(TMP_DIR + manpage + '.html', 'r')
+            html = file.read()
+            file.close()
+            os.system('rm -rf ' + TMP_DIR + manpage + '.html')
+
+            html = html.replace('<h1>', '<h2>')
+            html = html.replace('</h1>', '</h2>')
+
+            soup = BeautifulSoup(html, features="html.parser")
+            title = soup.find_all(name='p', limit=1)
+            title = re.sub('<[^<]+?>', '', str(title))
+
+            print(title)
+
+            file = open(TMP_DIR + section + '.' + manpage + '.html', 'w')
+            a = file.write(html)
+            file.close()
+
+            anchor = section + '.' + manpage
+            print(anchor)
+            toc['section' + str(section)] = {}
+            toc['section' + str(section)]['chapter' + anchor] = {}
+            toc['section' + str(section)]['chapter' + anchor]['title'] = title
+            toc['section' + str(section)]['chapter' + anchor]['anchor'] = section + '.' + anchor
+            print(toc)
+        except Exception as err:
+            print(err)
+            pass
+
         if LIMIT > 0:
-            if x == LIMIT:
+            if i == LIMIT:
                 break
-            x += 1
+            i += 1
