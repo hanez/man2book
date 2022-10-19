@@ -6,21 +6,15 @@ import re
 from bs4 import BeautifulSoup
 
 __author__ = 'Johannes Findeisen <you@hanez.org>'
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 DIR = '/home/hanez/code/man2book/'
-# the limit is just for development to limit the number of man pages in each section. set to 0 to
-# have no limit.
 LIMIT = 0
 MANPAGE_PATH = '/usr/share/man/'
 OUTPUT_DIR = DIR + 'output/'
 TMP_DIR = '/tmp/man2book/'
 
 sections = ['1', '2', '3', '4', '5', '6', '7', '8']
-# the toc will be a nested dictionary: https://www.geeksforgeeks.org/python-nested-dictionary/
-# toc = {'section1': {'title': 'title', 'anchor': 'anchor'},
-#        'section1': {'title': 'title', 'anchor': 'anchor'},
-#        'section2': {'title': 'title', 'anchor': 'anchor'}}
 toc = {}
 
 parser = argparse.ArgumentParser(
@@ -29,9 +23,6 @@ parser = argparse.ArgumentParser(
     epilog='author: ' + __author__,
     prog='man2book')
 
-# if using this feature there must be a way to set the section for each manpage since the name
-# can be used in more than one section. maybe make it optional like df:1 or so. so this feature
-# is not reliable at the moment.
 parser.add_argument('-m', '--manpages', metavar='MANPAGES', help='limit only to a subset of '
                                                                  'man pages. e.g. cd or a list '
                                                                  'like cd,df,mv. this feature '
@@ -90,7 +81,7 @@ for section in sections:
                 os.system('rm -rf ' + TMP_DIR + manpage_file)
                 pass
             os.system('pandoc --from man --to html < ' + TMP_DIR + manpage +
-                      ' > ' + TMP_DIR + manpage + '.html')
+                      ' > ' + TMP_DIR + section + '.' + os.path.splitext(manpage)[0] + '.html')
 
             os.system('rm -rf ' + TMP_DIR + manpage)
 
