@@ -1,5 +1,6 @@
 .idea/
+log/*
 man2book.iml
-/output/*.html
-/tmp/
+/out/*.html
+/tmp/*
 /venv/
