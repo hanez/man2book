@@ -6,12 +6,12 @@ import os
 # have no limit.
 LIMIT = 0
 MANPAGE_PATH = '/usr/share/man/'
-OUTPUT_DIR = '~/code/man2book/output/'
+OUTPUT_DIR = './output/'
 TMP_DIR = '/tmp'
 
 
 __author__ = 'Johannes Findeisen <you@hanez.org>'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 def parse_args():
@@ -68,6 +68,9 @@ for section in sections:
                 # create and  to create a toc. maybe the anchor in the toc can be a hash
                 os.system('/usr/bin/man -Thtml ' + manpage + ' > ' + OUTPUT_DIR + 'man' + section +
                           '.' + manpage + '.html')
+        else:
+            os.system('/usr/bin/man -Thtml ' + manpage + ' > ' + OUTPUT_DIR + 'man' + section +
+                      '.' + manpage + '.html')
         if LIMIT > 0:
             if x == LIMIT:
                 break
