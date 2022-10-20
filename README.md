@@ -66,7 +66,7 @@ Source: [https://www.kernel.org/doc/man-pages/](https://www.kernel.org/doc/man-p
 ## Future
 
 When the above steps are done, and we could build a complete book there are some
-feature ides:
+feature ideas:
 
 - Some kind of template for the book including a cover.
 - Image support for the cover.
