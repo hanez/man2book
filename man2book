@@ -1,4 +1,27 @@
 #!/usr/bin/python3
+"""
+This file is part of man2book (https://git.unixpeople.org/hanez/man2book)
+Copyright (c) 2022 Johannes Findeisen <you@hanez.org>. All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is furnished
+to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice (including the next
+paragraph) shall be included in all copies or substantial portions of the
+Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+
 import argparse
 import os
 import re
@@ -6,177 +29,203 @@ import re
 from bs4 import BeautifulSoup
 
 __author__ = 'Johannes Findeisen <you@hanez.org>'
-__version__ = '0.1.0'
+# currently i only increase the third number because i commit early and often and nearly on every
+# commit there are new features. 0.2.0 will be ready for generating a full book. then i will use the
+# pythonic version scheme.
+__version__ = '0.1.1'
 
 MANPAGE_PATH = '/usr/share/man/'
 
-parser = argparse.ArgumentParser(
-    description='man2book is a tool to create a custom book of installed man pages or a '
-                'selection of manpage sections and pages.',
-    epilog='author: ' + __author__,
-    prog='man2book')
 
-parser.add_argument('-c', '--clean', default=False, dest='clean', action='store_true',
-                    help='clean temporary files after processing (default: false)')
+def main():
+    parser = argparse.ArgumentParser(
+        description='man2book is a tool to create a custom book of installed man pages or a '
+                    'selection of manpage sections and / or pages.',
+        epilog='author: ' + __author__,
+        prog='man2book')
 
-parser.add_argument('-d', '--debug', default=False, dest='debug', action='store_true',
-                    help='be verbose and print debug information (default: false)')
+    parser.add_argument('-c', '--clean', default=False, dest='clean', action='store_true',
+                        help='clean temporary files after processing (default: false)')
 
-parser.add_argument('-l', '--limit', default=0, dest='limit', type=int,
-                    help='maximum number of files generated in each section. this is set to the '
-                         'number of commands to create a chapter for. only useful when debugging a '
-                         'full section genration (default: 0; no limit)')
+    parser.add_argument('-d', '--debug', default=False, dest='debug', action='store_true',
+                        help='be verbose and print debug information (default: false)')
 
-parser.add_argument('-m', '--manpages', help='limit only to a subset of man pages. e.g. cd or a '
-                                             'list like cd,df,mv. this feature is not 100% '
-                                             'reliable at the moment because it should be possible '
-                                             'to set the section here optionally for each manpage! '
-                                             'e.g. df.1. it is not very important actually.')
+    parser.add_argument('-l', '--limit', default=0, dest='limit', type=int,
+                        help='maximum number of files generated in each section. this is set to '
+                             'the number of commands to create a chapter for. only useful when '
+                             'debugging a full section genration (default: 0; no limit)')
 
+    parser.add_argument('-m', '--manpages', help='limit only to a subset of man pages. e.g. cd or '
+                                                 'a list like cd,df,mv. this feature is not 100% '
+                                                 'reliable at the moment because it should be '
+                                                 'possible to set the section here optionally for '
+                                                 'each manpage! e.g. df.1. it is not very '
+                                                 'important actually.')
 
-parser.add_argument('-s', '--sections', help='the manpage sections. e.g. 8 or a list like 1,2,3')
+    parser.add_argument('-s', '--sections', help='the manpage sections. e.g. 8 or a list like '
+                                                 '1,2,3')
 
-parser.add_argument("target_directory", metavar="TARGET_DIRECTORY",
-                    help="the target directory for the output. it must contain two directories."
-                         "one is the directory for tempory file output (tmp/) and one for the "
-                         "final processing result (out).")
+    parser.add_argument('target_directory', metavar='TARGET_DIRECTORY',
+                        help='the target directory for the output. it must contain two directories.'
+                             'one is the directory for tempory file output (tmp/) and one for the '
+                             'final processing result (out).')
 
-parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(__version__))
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(__version__))
 
-args = parser.parse_args()
+    parser.add_argument('-z', '--zero', default=False, dest='zero', action='store_true',
+                        help='do not show any output at execution (default: false)')
 
-output_dir = args.target_directory + 'out/'
-sections = ['1', '2', '3', '4', '5', '6', '7', '8']
-tmp_dir = args.target_directory + 'tmp/'
-toc = {}
+    args = parser.parse_args()
 
-if args.sections:
-    args_sections = args.sections.split(',')
-    new_sections = []
-    for section in args_sections:
-        # maybe make sections just a default which could be overridden in the cli. for now you
-        # can set sections in the cli which are defined in "sections" above.
-        if section not in sections:
-            print('section ' + section + ' not found! aborting...')
-            exit(1)
-        new_sections.append(section)
-    sections = new_sections
+    output_dir = args.target_directory + 'out/'
+    sections = ['1', '2', '3', '4', '5', '6', '7', '8']
+    tmp_dir = args.target_directory + 'tmp/'
+    toc = {}
 
-i = 1
-for section in sections:
-    args_manpages = []
-    manpage_files = []
-    if args.manpages:
-        args_manpages = args.manpages.split(',')
-        for manpage in args_manpages:
+    if args.sections:
+        args_sections = args.sections.split(',')
+        new_sections = []
+        for section in args_sections:
+            # maybe make sections just a default which could be overridden in the cli. for now, you
+            # can set sections in the cli which are defined in "sections" above.
+            if section not in sections:
+                print('section ' + section + ' not found! aborting...')
+                exit(1)
+            new_sections.append(section)
+        sections = new_sections
+
+    i = 1
+    overall_count = 0
+    for section in sections:
+        count = 0
+        args_manpages = []
+        manpage_files = []
+        if args.manpages:
+            args_manpages = args.manpages.split(',')
+            for manpage in args_manpages:
+                if args.debug:
+                    print('manpage: ' + manpage + '.' + section + '.gz')
+                manpage_files.append(manpage + '.' + section + '.gz')
+            manpage_files.sort()
             if args.debug:
-                print('manpage: ' + manpage + '.' + section + '.gz')
-            manpage_files.append(manpage + '.' + section + '.gz')
-        manpage_files.sort()
+                print('manpage_files: ' + str(manpage_files))
+        else:
+            manpage_files = os.listdir(MANPAGE_PATH + 'man' + section + '/')
+
+        args_limit = len(args_manpages)
+        if args.limit:
+            args_limit = args.limit
         if args.debug:
-            print('manpage_files: ' + str(manpage_files))
-    else:
-        manpage_files = os.listdir(MANPAGE_PATH + 'man' + section + '/')
+            print('args_limit: ' + str(args_limit))
 
-    args_limit = len(args_manpages)
-    if args.limit:
-        args_limit = args.limit
-    if args.debug:
-        print('args_limit: ' + str(args_limit))
+        args_manpage = ''
+        stop = False
+        for manpage_file in manpage_files:
+            manpage = os.path.splitext(os.path.basename(manpage_file))[0]
+            command = os.path.splitext(manpage)[0]
+            count += 1
+            overall_count = overall_count + len(manpage_files)
+            if not args.zero:
+                print('progress: ' + str(count) + '/' + str(len(manpage_files)) +
+                      ' processing section: ' + str(section) + ' using manpage: ' + str(manpage))
 
-    args_manpage = ''
-    stop = False
-    for manpage_file in manpage_files:
-        manpage = os.path.splitext(os.path.basename(manpage_file))[0]
-        command = os.path.splitext(manpage)[0]
-        try:
-            if args.manpages:
-                if stop is True:
-                    args_manpages.remove(args_manpage)
-                    if not args_manpages:
-                        raise StopIteration
-                else:
-                    stop = False
-
-                i = 1
-                for args_manpage in args_manpages:
-                    if os.path.splitext(args_manpage)[0] not in args_manpages:
-                        break
-                    else:
-                        manpage = args_manpage + '.' + section
-                        manpage_file = manpage + '.gz'
-                        stop = True
-
-            if args.debug:
-                print(('cp /usr/share/man/man' + section + '/' + manpage_file + ' ' + tmp_dir))
-            os.system('cp /usr/share/man/man' + section + '/' + manpage_file + ' ' + tmp_dir)
             try:
+                if args.manpages:
+                    if stop is True:
+                        args_manpages.remove(args_manpage)
+                        if not args_manpages:
+                            raise StopIteration
+                    else:
+                        stop = False
+
+                    i = 1
+                    for args_manpage in args_manpages:
+                        if os.path.splitext(args_manpage)[0] not in args_manpages:
+                            break
+                        else:
+                            manpage = args_manpage + '.' + section
+                            manpage_file = manpage + '.gz'
+                            stop = True
+
+                if args.debug:
+                    print(('cp /usr/share/man/man' + section + '/' + manpage_file + ' ' + tmp_dir))
+                os.system('cp /usr/share/man/man' + section + '/' + manpage_file + ' ' + tmp_dir)
+                try:
+                    if args.clean:
+                        if args.debug:
+                            print('gunzip -f' + tmp_dir + manpage_file)
+                        os.system('gunzip -f ' + tmp_dir + manpage_file)
+                    else:
+                        if args.debug:
+                            print('gunzip -fk ' + tmp_dir + manpage_file)
+                        os.system('gunzip -fk ' + tmp_dir + manpage_file)
+                except OSError as err:
+                    if args.debug:
+                        print('rm -rf ' + tmp_dir + manpage_file)
+                    os.system('rm -rf ' + tmp_dir + manpage_file)
+                    pass
+
+                # start producing output to OUTPUT_DIR for final result
+                if args.debug:
+                    print('pandoc --from man --to html < ' + tmp_dir + manpage +
+                          ' > ' + output_dir + section + '.' + command + '.html')
+                os.system('pandoc --from man --to html < ' + tmp_dir + manpage +
+                          ' > ' + output_dir + section + '.' + command + '.html')
+
                 if args.clean:
                     if args.debug:
-                        print('gunzip -f' + tmp_dir + manpage_file)
-                    os.system('gunzip -f ' + tmp_dir + manpage_file)
-                else:
-                    if args.debug:
-                        print('gunzip -fk ' + tmp_dir + manpage_file)
-                    os.system('gunzip -fk ' + tmp_dir + manpage_file)
-            except OSError as err:
+                        print('rm -rf ' + tmp_dir + manpage)
+                    os.system('rm -rf ' + tmp_dir + manpage)
                 if args.debug:
-                    print('rm -rf ' + tmp_dir + manpage_file)
-                os.system('rm -rf ' + tmp_dir + manpage_file)
+                    print('outfile: ' + output_dir + section + '.' + command + '.html')
+                file = open(output_dir + section + '.' + command + '.html', 'r')
+                html = file.read()
+                file.close()
+
+                if args.clean:
+                    if args.debug:
+                        print('rm -rf ' + tmp_dir + manpage + '.html')
+                    os.system('rm -rf ' + tmp_dir + manpage + '.html')
+
+                html = html.replace('<h1>', '<h3>')
+                html = html.replace('</h1>', '</h3>')
+
+                soup = BeautifulSoup(html, features="html.parser")
+                title = soup.find_all(name='p', limit=1)[0]
+                title = re.sub('<[^<]+?>', '', str(title))
+                if args.debug:
+                    print('title: ' + title)
+
+                file = open(output_dir + section + '.' + command + '.html', 'w')
+                a = file.write(html)
+                file.close()
+
+                anchor = section + '.' + command
+                if args.debug:
+                    print('anchor: ' + anchor)
+                toc['section.' + str(section)] = {}
+                toc['section.' + str(section)]['chapter.' + anchor] = {}
+                toc['section.' + str(section)]['chapter.' + anchor]['title'] = title
+                toc['section.' + str(section)]['chapter.' + anchor]['anchor'] = anchor
+                if args.debug:
+                    print('toc: ' + str(toc))
+            except Exception as err:
+                # this error will be printed even if not in debug mode.
+                print('error: ' + str(err))
+                # we are passing here because there are man pages which are not formatted correctly.
+                # we can not take of this here and want the process to go on.
                 pass
 
-            # start producing output to OUTPUT_DIR for final result
-            if args.debug:
-                print('pandoc --from man --to html < ' + tmp_dir + manpage +
-                      ' > ' + output_dir + section + '.' + command + '.html')
-            os.system('pandoc --from man --to html < ' + tmp_dir + manpage +
-                      ' > ' + output_dir + section + '.' + command + '.html')
+            if args_limit > 0:
+                if i == args_limit:
+                    break
+                i += 1
 
-            if args.clean:
-                if args.debug:
-                    print('rm -rf ' + tmp_dir + manpage)
-                os.system('rm -rf ' + tmp_dir + manpage)
-            if args.debug:
-                print('outfile: ' + output_dir + section + '.' + command + '.html')
-            file = open(output_dir + section + '.' + command + '.html', 'r')
-            html = file.read()
-            file.close()
+        print('processed: ' + str(overall_count) + ' man pages')
 
-            if args.clean:
-                if args.debug:
-                    print('rm -rf ' + tmp_dir + manpage + '.html')
-                os.system('rm -rf ' + tmp_dir + manpage + '.html')
 
-            html = html.replace('<h1>', '<h3>')
-            html = html.replace('</h1>', '</h3>')
-
-            soup = BeautifulSoup(html, features="html.parser")
-            title = soup.find_all(name='p', limit=1)[0]
-            title = re.sub('<[^<]+?>', '', str(title))
-            if args.debug:
-                print('title: ' + title)
-
-            file = open(output_dir + section + '.' + command + '.html', 'w')
-            a = file.write(html)
-            file.close()
-
-            anchor = section + '.' + command
-            if args.debug:
-                print('anchor: ' + anchor)
-            toc['section.' + str(section)] = {}
-            toc['section.' + str(section)]['chapter.' + anchor] = {}
-            toc['section.' + str(section)]['chapter.' + anchor]['title'] = title
-            toc['section.' + str(section)]['chapter.' + anchor]['anchor'] = anchor
-            if args.debug:
-                print('toc: ' + str(toc))
-        except Exception as err:
-            # this error will be printed even if not in debug mode.
-            print('error: ' + str(err))
-            # we are passing here because there are man pages which are not formatted correctly.
-            # we can not take of this here and want the process to go on.
-            pass
-
-        if args_limit > 0:
-            if i == args_limit:
-                break
-            i += 1
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt as err:
+        print('man2book terminated by user!')
