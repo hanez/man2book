@@ -32,9 +32,7 @@ __author__ = 'Johannes Findeisen <you@hanez.org>'
 # currently i only increase the third number because i commit early and often and nearly on every
 # commit there are new features. 0.2.0 will be ready for generating a full book. then i will use the
 # pythonic version scheme.
-__version__ = '0.1.1'
-
-MANPAGE_PATH = '/usr/share/man/'
+__version__ = '0.1.2'
 
 
 def main():
@@ -62,13 +60,16 @@ def main():
                                                  'each manpage! e.g. df.1. it is not very '
                                                  'important actually.')
 
+    parser.add_argument('-p', '--path', help='path to the root of the man pages. (default: '
+                                             '/usr/share/man/)')
+
     parser.add_argument('-s', '--sections', help='the manpage sections. e.g. 8 or a list like '
                                                  '1,2,3')
 
     parser.add_argument('target_directory', metavar='TARGET_DIRECTORY',
                         help='the target directory for the output. it must contain two directories.'
-                             'one is the directory for tempory file output (tmp/) and one for the '
-                             'final processing result (out).')
+                             'one is the directory for temporary file output (tmp/) and one for '
+                             'the final processing result (out).')
 
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + str(__version__))
 
@@ -76,6 +77,10 @@ def main():
                         help='do not show any output at execution (default: false)')
 
     args = parser.parse_args()
+
+    manpage_path = '/usr/share/man/'
+    if args.path:
+        manpage_path = args.path
 
     output_dir = args.target_directory + 'out/'
     sections = ['1', '2', '3', '4', '5', '6', '7', '8']
@@ -110,7 +115,7 @@ def main():
             if args.debug:
                 print('manpage_files: ' + str(manpage_files))
         else:
-            manpage_files = os.listdir(MANPAGE_PATH + 'man' + section + '/')
+            manpage_files = os.listdir(manpage_path + 'man' + section + '/')
 
         args_limit = len(args_manpages)
         if args.limit:

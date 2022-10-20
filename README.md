@@ -77,8 +77,8 @@ feature ides:
 - Maybe support for other converters / generators.
 - Links to other man pages as mentioned in the footer of all man pages, e.g.: pam(8).
   But only if available in the current book.
-- Maybe a progress bar instead of printing for every file being processed. 
-(https://www.geeksforgeeks.org/progress-bars-in-python/)
+- Maybe a progress bar instead of printing for every file being processed 
+(https://www.geeksforgeeks.org/progress-bars-in-python/).
 
 ## Bugs
 
@@ -89,4 +89,4 @@ path somewhere?).
 ## Links
 
 - [The Linux man-pages project](https://www.kernel.org/doc/man-pages/) - I found this 
-project after researching a little for my idea and inspired me a lot to start my project.
+project after researching a little for my idea and it inspired me a lot to start my project.

@@ -1,3 +1,3 @@
 clean:
-	rm -rf ./output/*.html
+	rm -rf ./out/*
 	rm -rf ./tmp/*
