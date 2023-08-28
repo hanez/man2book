@@ -32,7 +32,7 @@ __author__ = 'Johannes Findeisen <you@hanez.org>'
 # currently i only increase the third number because i commit early and often and nearly on every
 # commit there are new features. 0.1.* will be ready for generating a full book. then i will use the
 # pythonic version scheme.
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 
 
 def main():
@@ -54,7 +54,7 @@ def main():
                              'debugging a full section genration (default: 0; no limit)')
 
     parser.add_argument('-m', '--manpages', help='limit only to a subset of man pages. e.g. cd or '
-                                                 'a list like cd,df,mv. this feature is not 100% '
+                                                 'a list like cd,df,mv. this feature is not 100 percent '
                                                  'reliable at the moment because it should be '
                                                  'possible to set the section here optionally for '
                                                  'each manpage! e.g. df.1. it is not very '
